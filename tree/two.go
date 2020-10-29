@@ -3,14 +3,13 @@ package tree
 // 双叉树
 
 type TwoTreeNode struct {
-	Val   interface{}
+	Val   int
 	Left  *TwoTreeNode
 	Right *TwoTreeNode
 }
 
-func buildTree(nums []interface{}, index int, level int) *TwoTreeNode {
+func buildTree(nums []int, index int) *TwoTreeNode {
 	// index: 当前元素的数组索引
-	// css:  层级
 	if index > len(nums)-1 {
 		return nil
 	}
@@ -18,12 +17,11 @@ func buildTree(nums []interface{}, index int, level int) *TwoTreeNode {
 	node := &TwoTreeNode{
 		Val: nums[index],
 	}
-	level++
-	node.Left = buildTree(nums, index*2+1, level)
-	node.Right = buildTree(nums, index*2+2, level)
+	node.Left = buildTree(nums, index*2+1)
+	node.Right = buildTree(nums, index*2+2)
 	return node
 }
 
-func sortedArrayToBST(nums []interface{}) *TwoTreeNode {
-	return buildTree(nums, 0, 0)
+func sortedArrayToBST(nums []int) *TwoTreeNode {
+	return buildTree(nums, 0)
 }
