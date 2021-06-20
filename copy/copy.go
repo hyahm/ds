@@ -3,6 +3,8 @@ package copy
 import (
 	"errors"
 	"reflect"
+	"runtime"
+	"strings"
 
 	"github.com/hyahm/golog"
 )
@@ -10,6 +12,7 @@ import (
 var ErrOutValueNotPointer = errors.New("output pointer not a pointer")
 var ErrNotSupport = errors.New("not support struct")
 var ErrCanNotConvert = errors.New("can not convert struct")
+var ErrOutRange = errors.New("value out of range")
 var ErrCanNotSet = errors.New("can not set value")
 
 // 将前面的参数的值复制给后面的参数
@@ -25,11 +28,11 @@ func CopyValue(input, output interface{}) error {
 	}
 	rte := rty.Elem()
 	in := reflect.ValueOf(input)
-	ot := reflect.ValueOf(&output)
-	// if !ot.CanSet() {
-	// 	golog.Error(ErrCanNotSet)
-	// 	return ErrCanNotSet
-	// }
+	ot := reflect.ValueOf(output).Elem()
+	if !ot.CanSet() {
+		golog.Error(ErrCanNotSet)
+		return ErrCanNotSet
+	}
 	// 如果值和获取的值都是指针
 	if ip.Kind() == reflect.Ptr {
 		golog.Info("aaaa")
@@ -43,7 +46,6 @@ func CopyValue(input, output interface{}) error {
 		// 	golog.Info("aaaaaa")
 		// }
 	} else {
-		golog.Info("aaaa")
 		// 如果前面的值不是指针，
 		if rte.Kind() == ip.Kind() {
 
@@ -82,18 +84,37 @@ func CopyValue(input, output interface{}) error {
 			case reflect.UnsafePointer:
 			}
 		} else {
-			golog.Info("aaaaa")
 			outputKind := rte.Kind()
 			switch outputKind {
 			case reflect.Int:
-				golog.Info("aaaaa")
 				// 输出是int， 那么下面这些类型都是可以转为int的
 				switch ip.Kind() {
 				case reflect.Int8:
-					ot.Set(in)
+					p := ot.Addr().Interface().(*int)
+					*p = int(in.Interface().(int8))
 				case reflect.Int16:
+					p := ot.Addr().Interface().(*int)
+					*p = int(in.Interface().(int16))
 				case reflect.Int32:
+					p := ot.Addr().Interface().(*int)
+					*p = int(in.Interface().(int32))
 				case reflect.Int64:
+					// strconv.
+					if strings.Contains(runtime.GOARCH, "64") {
+						// 64位系统的话， int 就是 int64
+						p := ot.Addr().Interface().(*int)
+						*p = int(in.Interface().(int64))
+					} else {
+						//
+						p := ot.Addr().Interface().(*int)
+						v := int(in.Interface().(int64))
+						if v >= -1<<31 && v <= 1<<31-1 {
+							*p = v
+						} else {
+							return ErrOutRange
+						}
+
+					}
 				case reflect.Uint:
 				case reflect.Uint8:
 				case reflect.Uint16:
