@@ -57,6 +57,14 @@ func NewSet() *Set {
 	}
 }
 
+func NewValueSet(value []int) *Set {
+	set := NewSet()
+	for _, v := range value {
+		set.Add(v)
+	}
+	return set
+}
+
 func (s *Set) Add(value int) *Set {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()
@@ -74,6 +82,15 @@ func (s *Set) Get() []int {
 	return s.S
 }
 
+// 判断是否存在某个值
+func (s *Set) Exsit(v int) bool {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+	_, ok := s.M[v]
+	return ok
+}
+
+// 通过索引获取值
 func (s *Set) GetIndex(i int) (int, error) {
 	s.Mu.RLock()
 	defer s.Mu.RUnlock()
@@ -81,4 +98,23 @@ func (s *Set) GetIndex(i int) (int, error) {
 		return 0, errors.New("not found this index")
 	}
 	return s.S[i], nil
+}
+
+// 是否完全包含传入的值
+func (s *Set) Contents(value []int) bool {
+	s.Mu.RLock()
+	defer s.Mu.RUnlock()
+
+	new := NewValueSet(value)
+	// 如果比传入过来的值小， 那么肯定不完全包含
+	if s.Length < new.Length {
+		return false
+	}
+	for i := 0; i < new.Length; i++ {
+		v, _ := new.GetIndex(i)
+		if !s.Exsit(v) {
+			return false
+		}
+	}
+	return true
 }
